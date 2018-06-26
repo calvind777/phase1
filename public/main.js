@@ -1,6 +1,8 @@
 // Modules to control application life and create native browser window
 const {app, BrowserWindow, ipcMain} = require('electron');
 const { exec } = require('child_process');
+const fs = require('fs');
+console.log(fs);
 // const authentication = require('@cardstack/authentication');
 // const hub = require('@cardstack/hub');
 // const jsonapi = require('@cardstack/jsonapi');
@@ -37,21 +39,69 @@ app.on('ready', function () {
 
 });
 
-ipcMain.on('synchronous-message', (event, arg) => {
-  console.log(arg); // prints "ping"
-  
-  exec('git clone ' + arg, (err, stdout, stderr) => {
-    console.log(stdout);
-    console.log(stderr);
-    console.log(err);
-    if (err) {
-      console.log("failed");
-      event.returnValue = "failed";
+ipcMain.on('download', (event, arg1, arg2) => {
+  console.log(arg1); // prints "ping"
+  if (arg1 === 'approved'){
+    exec('git clone ' + arg2, (err, stdout, stderr) => {
+
+      console.log(stderr);
+      console.log('yo')
+      if (err) {
+        console.log("failed");
+        event.sender.send('download-status', 'failed', arg2);
+      }
+      else {
+        console.log('success');
+        reponame = stderr.substring(14, stderr.indexOf("'", 14));
+        event.sender.send('download-status', 'success', reponame);
+      }
+
+
+    })
+  } else if (arg1 === 'success') { //boot up the app 
+    const existsnpm = fs.existsSync('./' + arg2 + '/package.json');
+    const existsyarn = fs.existsSync('./' + arg2 + '/yarn.lock');
+    console.log('./'+arg2+'/package.json');
+    console.log("does package exist");
+    console.log(exists);
+    if (existsnpm) { //assuming either npm or yarn exists
+      exec('npm install', (err, stdout, stderr) => {
+        console.log('attempted npm install');
+        console.log(stderr);
+        if (err) {
+          console.log("error occ");
+        } else {
+          exec('ember serve', (err, stdout, std) => {
+            if (err) {
+              console.log("error occ");
+            } else {
+              console.log("ember serve has succeeded")
+            }
+          })
+        }
+      })
     }
-    else {
-      event.returnValue = arg;
+    if (existsyarn) {
+      exec('yarn install', (err, stdout, stderr) => {
+        console.log('attempted yarn install');
+        console.log(stderr);
+        if (err) {
+          console.log("error occ");
+        } else {
+          exec('ember serve', (err, stdout, std) => {
+            if (err) {
+              console.log("error occ");
+            } else {
+              console.log("ember serve has succeeded");
+
+            }
+          })
+        }
+      })
     }
-  })
+
+
+  }
 
 });
 

@@ -9,7 +9,21 @@ class App extends Component {
 
   constructor(props) {
     super(props);
-    this.state = {url: '', submitted: false, approved:false, success: false}
+    this.state = {url: '', submitted: false, approved:false, success: false, installing: false};
+    ipcRenderer.on('download-status', (event, arg1, arg2) => {
+      if (arg1 === 'failed') {
+        this.setState({success: false});
+      }
+      else if (arg1 === 'success') {
+        this.setState({success: true});
+        this.setState({installing: true})
+        console.log('download succeeded')
+        ipcRenderer.send('download', 'success', arg2);
+      }
+      else {
+
+      }
+    });
   }
 
   handleChange = (event) => {
@@ -23,23 +37,14 @@ class App extends Component {
     console.log(this.state)
     if (this.state.approved) {
 
-      const success = ipcRenderer.sendSync('synchronous-message', this.state.url);
-      console.log(success);
-      if (success !== 'failed') {
-        console.log('woo')
-        this.setState({success: true});
-        
-      }
-      else {
-       
-
-      }
+      ipcRenderer.send('download','approved', this.state.url);
+  
     } 
   }
 
   handleCheck = (event) => {
     this.setState({approved: !this.state.approved});
-    this.setState({submitted: false})
+    this.setState({submitted: false});
 
   }
 
@@ -70,6 +75,7 @@ class App extends Component {
 
         <p id="success" hidden = {!this.state.success}> Your local copy has been downloaded. </p>
         <p id="failure" hidden = {!this.state.submitted || this.state.success}> Download failed. </p>
+        <p id="installing" hidden = {!this.state.installing}> Installing dependencies... </p>
 
       </div>
     );
