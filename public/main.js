@@ -11,6 +11,10 @@ console.log(fs);
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
 
+async function swag() {
+
+}
+
 function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 800, height: 600});
@@ -59,47 +63,49 @@ ipcMain.on('download', (event, arg1, arg2) => {
 
     })
   } else if (arg1 === 'success') { //boot up the app 
+    let type = null;
     const existsnpm = fs.existsSync('./' + arg2 + '/package.json');
     const existsyarn = fs.existsSync('./' + arg2 + '/yarn.lock');
     console.log('./'+arg2+'/package.json');
     console.log("does package exist");
-    console.log(exists);
-    if (existsnpm) { //assuming either npm or yarn exists
-      exec('npm install', (err, stdout, stderr) => {
-        console.log('attempted npm install');
-        console.log(stderr);
-        if (err) {
-          console.log("error occ");
-        } else {
-          exec('ember serve', (err, stdout, std) => {
-            if (err) {
-              console.log("error occ");
-            } else {
-              console.log("ember serve has succeeded")
-            }
-          })
-        }
-      })
+    
+    if (existsnpm) {
+      type = 'npm';
     }
     if (existsyarn) {
-      exec('yarn install', (err, stdout, stderr) => {
-        console.log('attempted yarn install');
-        console.log(stderr);
-        if (err) {
-          console.log("error occ");
-        } else {
-          exec('ember serve', (err, stdout, std) => {
-            if (err) {
-              console.log("error occ");
-            } else {
-              console.log("ember serve has succeeded");
-
-            }
-          })
-        }
-      })
+      type = 'yarn';
     }
+    if (type !== null) { //assuming either npm or yarn exists
+      
+        let bowerinstall = exec('bower' + ' install', {cwd: arg2});
 
+
+        bowerinstall.on('close', (err, stdout, stderr) => {
+          let npminstall = exec(type + ' install', {cwd: arg2});
+          npminstall.on('close', (err, stdout, stderr) => { 
+
+
+             exec('ember serve', {cwd: arg2}, (err, stdout, std) => {
+              if (err) {
+                console.log("error occ in serve");
+                console.log(err);
+                console.log(stderr);
+                
+              } else {
+                console.log("ember serve has succeeded")
+              }
+            });
+
+
+          });
+          
+         
+        });
+
+
+      
+    }
+    
 
   }
 

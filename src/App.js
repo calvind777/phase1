@@ -19,6 +19,7 @@ class App extends Component {
         this.setState({installing: true})
         console.log('download succeeded')
         ipcRenderer.send('download', 'success', arg2);
+        
       }
       else {
 
