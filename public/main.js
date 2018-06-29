@@ -1,8 +1,9 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, ipcMain} = require('electron');
-const { exec } = require('child_process');
+const {app, BrowserWindow, ipcMain, BrowserView} = require('electron');
+const { exec, spawn } = require('child_process');
 const fs = require('fs');
 console.log(fs);
+console.log()
 // const authentication = require('@cardstack/authentication');
 // const hub = require('@cardstack/hub');
 // const jsonapi = require('@cardstack/jsonapi');
@@ -15,12 +16,12 @@ async function swag() {
 
 }
 
-function createWindow () {
+function createWindow (url) {
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 800, height: 600});
 
   // and load the index.html of the app.
-  mainWindow.loadURL('http://localhost:3000');
+  mainWindow.loadURL(url);
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
@@ -38,7 +39,7 @@ function createWindow () {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', function () {
-  createWindow();
+  createWindow('http://localhost:3000');
 
 
 });
@@ -77,29 +78,55 @@ ipcMain.on('download', (event, arg1, arg2) => {
     }
     if (type !== null) { //assuming either npm or yarn exists
       
-        let bowerinstall = exec('bower' + ' install', {cwd: arg2});
+        let npminstall = exec('yarn' + ' install', {cwd: arg2});
 
+        npminstall.stdout.on('data', (data) => {
+          console.log(`stdout: ${data}`);
+        });
 
-        bowerinstall.on('close', (err, stdout, stderr) => {
-          let npminstall = exec(type + ' install', {cwd: arg2});
-          npminstall.on('close', (err, stdout, stderr) => { 
+        npminstall.stderr.on('data', (data) => {
+          console.log(`stderr: ${data}`);
+        });
 
+        npminstall.on('close', (err, stdout, stderr) => {
+          console.log('we doneon');
 
-             exec('ember serve', {cwd: arg2}, (err, stdout, std) => {
-              if (err) {
-                console.log("error occ in serve");
-                console.log(err);
-                console.log(stderr);
-                
-              } else {
-                console.log("ember serve has succeeded")
-              }
-            });
-
-
+          const ember_serve = spawn('ember', ['serve', '--port', '4203'], {cwd: arg2});
+          ember_serve.stdout.on('data', (data) => {
+            console.log(`stdout: ${data}`);
+            data = String(data);
+            console.log(typeof data);
+            console.log(data.substring(1, 17));
+            console.log(data.substring(1, 17) === "Build successful");
+            if (data.substring(1, 17) === "Build successful") {
+              console.log('entered');
+              const urlStart = data.indexOf('http');
+              const fullUrl = data.substring(urlStart);
+              
+              let win = new BrowserWindow({width: 800, height: 600})
+              win.on('closed', () => {
+                win = null
+              })
+              let view = new BrowserView({
+                webPreferences: {
+                  nodeIntegration: false
+                }
+              })
+              win.setBrowserView(view)
+              view.setBounds({ x: 0, y: 0, width: 800, height: 600 })
+              view.webContents.loadURL(fullUrl)
+            }
           });
-          
-         
+
+          ember_serve.stderr.on('data', (data) => {
+            console.log(`stderr: ${data}`);
+          });
+
+          ember_serve.on('close', (code) => {
+            console.log(`child process exited with code ${code}`);
+          });
+             
+        
         });
 
 
