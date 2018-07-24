@@ -33,7 +33,7 @@ class App extends Component {
   
 
   handleSubmit = (event) => {
-    this.setState({submitted:true})
+    this.setState({submitted:true});
     console.log("woo");
     console.log(this.state)
     if (this.state.approved) {

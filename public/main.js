@@ -12,10 +12,6 @@ console.log()
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
 
-async function swag() {
-
-}
-
 function createWindow (url) {
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 800, height: 600});
@@ -78,7 +74,7 @@ ipcMain.on('download', (event, arg1, arg2) => {
     }
     if (type !== null) { //assuming either npm or yarn exists
       
-        let npminstall = exec('yarn' + ' install', {cwd: arg2});
+        let npminstall = exec(type + ' install', {cwd: arg2});
 
         npminstall.stdout.on('data', (data) => {
           console.log(`stdout: ${data}`);
@@ -120,6 +116,7 @@ ipcMain.on('download', (event, arg1, arg2) => {
 
           ember_serve.stderr.on('data', (data) => {
             console.log(`stderr: ${data}`);
+
           });
 
           ember_serve.on('close', (code) => {
